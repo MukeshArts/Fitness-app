@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1A1A1B"/>
+      <stop offset="100%" style="stop-color:#111112"/>
+    </linearGradient>
+    <filter id="glow">
+      <feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#E1FF00" flood-opacity="0.7"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="100" fill="url(#bgGrad)"/>
+  <rect width="512" height="512" rx="100" fill="none" stroke="#E1FF00" stroke-width="5" opacity="0.15"/>
+
+  <!-- ===== DUMBBELL ===== -->
+  <!-- Center bar -->
+  <rect x="156" y="148" width="200" height="18" rx="9" fill="#E1FF00" filter="url(#glow)"/>
+
+  <!-- Left inner tall plate -->
+  <rect x="118" y="106" width="22" height="102" rx="6" fill="#E1FF00" filter="url(#glow)"/>
+  <!-- Left outer short cap -->
+  <rect x="88" y="126" width="16" height="62" rx="5" fill="#E1FF00" filter="url(#glow)"/>
+
+  <!-- Right inner tall plate -->
+  <rect x="372" y="106" width="22" height="102" rx="6" fill="#E1FF00" filter="url(#glow)"/>
+  <!-- Right outer short cap -->
+  <rect x="408" y="126" width="16" height="62" rx="5" fill="#E1FF00" filter="url(#glow)"/>
+
+  <!-- ===== FITFORGE as shapes (each letter hand-drawn as path) ===== -->
+  <g fill="#E1FF00" filter="url(#glow)" transform="translate(256,0)">
+
+    <!-- F -->
+    <rect x="-192" y="255" width="10" height="52" rx="2"/>
+    <rect x="-192" y="255" width="28" height="9" rx="2"/>
+    <rect x="-192" y="276" width="22" height="8" rx="2"/>
+
+    <!-- I -->
+    <rect x="-152" y="255" width="10" height="52" rx="2"/>
+
+    <!-- T -->
+    <rect x="-130" y="255" width="32" height="9" rx="2"/>
+    <rect x="-119" y="255" width="10" height="52" rx="2"/>
+
+    <!-- F -->
+    <rect x="-84" y="255" width="10" height="52" rx="2"/>
+    <rect x="-84" y="255" width="28" height="9" rx="2"/>
+    <rect x="-84" y="276" width="22" height="8" rx="2"/>
+
+    <!-- O -->
+    <rect x="-42" y="255" width="32" height="9" rx="2"/>
+    <rect x="-42" y="298" width="32" height="9" rx="2"/>
+    <rect x="-42" y="255" width="9" height="52" rx="2"/>
+    <rect x="-19" y="255" width="9" height="52" rx="2"/>
+
+    <!-- R -->
+    <rect x="10" y="255" width="10" height="52" rx="2"/>
+    <rect x="10" y="255" width="28" height="9" rx="2"/>
+    <rect x="10" y="275" width="28" height="8" rx="2"/>
+    <rect x="28" y="255" width="9" height="22" rx="2"/>
+    <polygon points="20,283 38,307 28,307 10,283"/>
+
+    <!-- G -->
+    <rect x="52" y="255" width="32" height="9" rx="2"/>
+    <rect x="52" y="298" width="32" height="9" rx="2"/>
+    <rect x="52" y="255" width="9" height="52" rx="2"/>
+    <rect x="75" y="278" width="9" height="29" rx="2"/>
+    <rect x="66" y="278" width="18" height="8" rx="2"/>
+
+    <!-- E -->
+    <rect x="106" y="255" width="10" height="52" rx="2"/>
+    <rect x="106" y="255" width="30" height="9" rx="2"/>
+    <rect x="106" y="276" width="24" height="8" rx="2"/>
+    <rect x="106" y="298" width="30" height="9" rx="2"/>
+
+  </g>
+
+  <!-- Divider line -->
+  <line x1="140" y1="322" x2="372" y2="322" stroke="#E1FF00" stroke-width="1.5" opacity="0.35"/>
+
+  <!-- YOUR GYM as simple bold rectangles / shapes -->
+  <!-- Y -->
+  <g fill="#E1FF00" opacity="0.75">
+    <polygon points="78,338 86,338 94,351 102,338 110,338 94,358"/>
+    <rect x="90" y="356" width="8" height="18" rx="2"/>
+
+    <!-- O -->
+    <rect x="118" y="338" width="24" height="7" rx="2"/>
+    <rect x="118" y="369" width="24" height="7" rx="2"/>
+    <rect x="118" y="338" width="7" height="38" rx="2"/>
+    <rect x="135" y="338" width="7" height="38" rx="2"/>
+
+    <!-- U -->
+    <rect x="150" y="338" width="7" height="32" rx="2"/>
+    <rect x="167" y="338" width="7" height="32" rx="2"/>
+    <rect x="150" y="369" width="24" height="7" rx="2"/>
+
+    <!-- R -->
+    <rect x="182" y="338" width="7" height="38" rx="2"/>
+    <rect x="182" y="338" width="20" height="7" rx="2"/>
+    <rect x="182" y="356" width="20" height="6" rx="2"/>
+    <rect x="196" y="338" width="6" height="19" rx="2"/>
+    <polygon points="188,362 202,376 195,376 182,362"/>
+
+    <!-- G -->
+    <rect x="218" y="338" width="24" height="7" rx="2"/>
+    <rect x="218" y="369" width="24" height="7" rx="2"/>
+    <rect x="218" y="338" width="7" height="38" rx="2"/>
+    <rect x="235" y="356" width="7" height="20" rx="2"/>
+    <rect x="228" y="356" width="14" height="6" rx="2"/>
+
+    <!-- Y -->
+    <polygon points="252,338 260,338 268,351 276,338 284,338 268,358"/>
+    <rect x="264" y="356" width="8" height="18" rx="2"/>
+
+    <!-- M -->
+    <rect x="292" y="338" width="7" height="38" rx="2"/>
+    <rect x="327" y="338" width="7" height="38" rx="2"/>
+    <polygon points="292,338 299,338 313,358 327,338 334,338 313,362"/>
+
+  </g>
+
+</svg>
