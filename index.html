@@ -1,0 +1,754 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#1A1A1B">
+  <meta name="description" content="FitForge - Your Personal Fitness Companion">
+  <title>FitForge</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(() => console.log('SW registered'))
+          .catch(err => console.log('SW error:', err));
+      });
+    }
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{--lime:#E1FF00;--bg:#1A1A1B;--bg2:#242425;--bg3:#2E2E30;--bg4:#383839;--indigo:#6366F1;--txt:#F1F1F1;--txt2:#A0A0A5;--green:#22C55E;--red:#EF4444;--orange:#FF4500;--blue:#3B82F6;--purple:#A855F7;--pink:#EC4899;--cyan:#06B6D4;--yellow:#EAB308;
+      --safe-top:env(safe-area-inset-top,0px);--safe-bot:env(safe-area-inset-bottom,0px);--safe-l:env(safe-area-inset-left,0px);--safe-r:env(safe-area-inset-right,0px)}
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html{height:100%;overflow:hidden}
+    body{font-family:'Inter',sans-serif;background:#111112;color:var(--txt);height:100%;overflow:hidden}
+    #root{height:100%;display:flex;align-items:center;justify-content:center}
+    ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:3px}
+    input,textarea,select,button{font-family:'Inter',sans-serif}
+
+    /* ===== RESPONSIVE SHELL ===== */
+    .shell{width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:0}
+    .app{display:flex;flex-direction:column;width:100%;height:100%;max-width:100%;background:var(--bg);position:relative;overflow:hidden}
+
+    /* Tablet+ (>600px): show as phone-like card */
+    @media(min-width:601px){
+      .shell{padding:16px;background:radial-gradient(ellipse at 50% 0%,#1a1a2e 0%,#111112 70%)}
+      .app{max-width:420px;height:min(100%,860px);border-radius:28px;border:2px solid var(--bg3);box-shadow:0 0 60px rgba(225,255,0,.06),0 20px 60px rgba(0,0,0,.5)}
+    }
+    /* Large desktop (>1024px): bigger card */
+    @media(min-width:1025px){
+      .app{max-width:440px;height:min(100%,900px)}
+    }
+
+    /* ===== MAIN ===== */
+    .main{flex:1;overflow-y:auto;overflow-x:hidden;padding:clamp(12px,3vw,18px);padding-top:calc(clamp(12px,3vw,18px) + var(--safe-top));padding-bottom:clamp(12px,3vw,18px);-webkit-overflow-scrolling:touch}
+    .pt{font-family:'Bebas Neue',sans-serif;font-size:clamp(22px,5vw,28px);letter-spacing:2px;color:var(--lime)}
+    .ps{font-size:clamp(10px,2.5vw,12px);color:var(--txt2);margin-top:-2px;margin-bottom:clamp(10px,2.5vw,14px)}
+    .card{background:var(--bg2);border-radius:clamp(12px,3vw,16px);padding:clamp(10px,2.5vw,14px);margin-bottom:clamp(8px,2vw,10px);border:1px solid var(--bg3)}
+    .ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px}
+    .ct{font-weight:700;font-size:clamp(12px,3vw,14px)}
+    .badge{font-size:clamp(8px,2vw,10px);padding:3px 8px;border-radius:20px;font-weight:700;letter-spacing:.5px;white-space:nowrap}
+    .bl{background:rgba(225,255,0,.12);color:var(--lime)}.bi{background:rgba(99,102,241,.12);color:var(--indigo)}.bg{background:rgba(34,197,94,.12);color:var(--green)}.br{background:rgba(239,68,68,.12);color:var(--red)}.bp{background:rgba(168,85,247,.12);color:var(--purple)}
+
+    /* Exercise item */
+    .ei{display:flex;align-items:center;gap:clamp(6px,2vw,10px);padding:clamp(7px,2vw,9px);background:var(--bg3);border-radius:clamp(10px,2.5vw,12px);margin-bottom:clamp(4px,1vw,5px);cursor:pointer;transition:all .15s;min-height:44px}
+    .ei:active{transform:scale(.98)}
+    .eic{width:clamp(32px,8vw,38px);height:clamp(32px,8vw,38px);border-radius:clamp(8px,2vw,10px);background:linear-gradient(135deg,var(--lime),#b8cc00);display:flex;align-items:center;justify-content:center;font-size:clamp(14px,3.5vw,16px);flex-shrink:0;color:var(--bg)}
+    .eic.tm{background:linear-gradient(135deg,var(--indigo),#818cf8)}.eic.cu{background:linear-gradient(135deg,var(--purple),var(--pink))}
+    .einf{flex:1;min-width:0}.en{font-weight:600;font-size:clamp(11px,2.8vw,12px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.em{font-size:clamp(9px,2.2vw,10px);color:var(--txt2);margin-top:1px}
+    .ea{display:flex;gap:4px;flex-shrink:0}
+    .ab{width:clamp(28px,7vw,30px);height:clamp(28px,7vw,30px);border-radius:8px;border:none;display:flex;align-items:center;justify-content:center;font-size:clamp(11px,3vw,13px);cursor:pointer;transition:all .15s;min-width:28px;min-height:28px}
+    .ab:active{transform:scale(.9)}
+    .ayt{background:rgba(239,68,68,.2);color:var(--red)}.ant{background:rgba(99,102,241,.2);color:var(--indigo)}.aad{background:rgba(225,255,0,.15);color:var(--lime)}.adl{background:rgba(239,68,68,.15);color:var(--red)}
+
+    /* Buttons */
+    .bp1{width:100%;padding:clamp(11px,3vw,13px);border-radius:14px;border:none;font-weight:700;font-size:clamp(12px,3vw,14px);cursor:pointer;transition:all .2s;background:linear-gradient(135deg,var(--lime),#c8db00);color:var(--bg);letter-spacing:.5px;min-height:44px}
+    .bp1:active{transform:scale(.97)}.bp1:disabled{opacity:.4}
+    .bs1{width:100%;padding:clamp(9px,2.5vw,11px);border-radius:14px;border:1px dashed var(--txt2);background:transparent;font-weight:600;font-size:clamp(11px,2.8vw,12px);color:var(--txt2);cursor:pointer;min-height:40px}
+    .bs1:active{border-color:var(--lime);color:var(--lime)}
+    .bsm{padding:7px 12px;border-radius:10px;border:none;font-weight:600;font-size:clamp(10px,2.5vw,11px);cursor:pointer;min-height:36px}
+    .bsm:active{transform:scale(.95)}
+    .chips{display:flex;gap:clamp(4px,1vw,5px);flex-wrap:wrap;margin-bottom:clamp(8px,2vw,10px)}
+    .chip{padding:clamp(4px,1vw,5px) clamp(8px,2vw,12px);border-radius:20px;font-size:clamp(9px,2.2vw,10px);font-weight:600;border:1px solid var(--bg3);cursor:pointer;transition:all .15s;background:var(--bg);color:var(--txt2);user-select:none;min-height:28px;display:flex;align-items:center}
+    .chip.on{background:var(--indigo);border-color:var(--indigo);color:#fff}
+    .chip:active{transform:scale(.95)}
+    .stats{display:grid;grid-template-columns:1fr 1fr;gap:clamp(6px,2vw,8px);margin-bottom:clamp(10px,2.5vw,12px)}
+    .stat{background:var(--bg3);border-radius:14px;padding:clamp(10px,2.5vw,12px);text-align:center}
+    .sv{font-family:'Bebas Neue',sans-serif;font-size:clamp(24px,6vw,28px);color:var(--lime)}.sl{font-size:clamp(9px,2.2vw,10px);color:var(--txt2);margin-top:2px}
+    .ig{margin-bottom:clamp(8px,2vw,10px)}.il{font-size:clamp(9px,2.2vw,10px);color:var(--txt2);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+    .inp{width:100%;padding:clamp(8px,2vw,10px) 12px;border-radius:12px;border:1px solid var(--bg3);background:var(--bg3);color:var(--txt);font-size:clamp(12px,3vw,13px);outline:none;transition:border .2s;min-height:40px}
+    .inp:focus{border-color:var(--lime)}.inp::placeholder{color:var(--txt2)}
+    textarea.inp{resize:vertical;min-height:50px}
+    .sb{display:flex;align-items:center;gap:8px;padding:clamp(8px,2vw,9px) 12px;background:var(--bg2);border-radius:14px;margin-bottom:clamp(8px,2vw,10px);border:1px solid var(--bg3);min-height:42px}
+    .sb input{flex:1;background:transparent;border:none;color:var(--txt);font-size:clamp(12px,3vw,13px);outline:none}
+
+    /* Bottom nav */
+    .bnav{display:flex;background:var(--bg2);border-top:1px solid var(--bg3);padding:clamp(4px,1vw,5px) 0 calc(clamp(6px,1.5vw,8px) + var(--safe-bot));flex-shrink:0}
+    .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;font-size:clamp(8px,2vw,9px);color:var(--txt2);cursor:pointer;background:none;border:none;padding:4px 0;min-height:44px;justify-content:center}
+    .ni.on{color:var(--lime)}.nic{font-size:clamp(16px,4vw,18px)}
+
+    /* Modal */
+    .mo{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.75);z-index:100;display:flex;align-items:flex-end;justify-content:center;animation:fi .2s}
+    @keyframes fi{from{opacity:0}to{opacity:1}}
+    @keyframes su{from{transform:translateY(100%)}to{transform:translateY(0)}}
+    .mb{background:var(--bg2);border-radius:20px 20px 0 0;padding:clamp(14px,3.5vw,18px);padding-bottom:calc(clamp(14px,3.5vw,18px) + var(--safe-bot));width:100%;max-width:480px;max-height:88vh;max-height:88dvh;overflow-y:auto;animation:su .25s ease-out;border:1px solid var(--bg3);border-bottom:none}
+    .mh{width:36px;height:4px;background:var(--bg4);border-radius:2px;margin:0 auto 12px}
+    .mt{font-weight:700;font-size:clamp(13px,3.5vw,15px);margin-bottom:10px;color:var(--lime)}
+    .tag{display:inline-flex;align-items:center;gap:4px;font-size:clamp(9px,2.2vw,10px);color:var(--lime);background:rgba(225,255,0,.08);padding:3px 10px;border-radius:20px}
+
+    /* Timer */
+    .td{font-family:'Bebas Neue',sans-serif;font-size:clamp(48px,14vw,64px);text-align:center;color:var(--lime);line-height:1;margin:14px 0}
+    .tc{display:flex;gap:10px;justify-content:center;margin-bottom:14px}
+    .tb{width:clamp(44px,12vw,52px);height:clamp(44px,12vw,52px);border-radius:50%;border:2px solid;display:flex;align-items:center;justify-content:center;font-size:clamp(16px,4.5vw,20px);cursor:pointer;background:transparent;transition:all .2s;min-width:44px;min-height:44px}
+    .tb:active{transform:scale(.9)}
+    .tb.pl{border-color:var(--green);color:var(--green)}.tb.pa{border-color:var(--orange);color:var(--orange)}.tb.rs{border-color:var(--txt2);color:var(--txt2)}.tb.sk{border-color:var(--indigo);color:var(--indigo)}
+
+    .es{text-align:center;padding:clamp(16px,4vw,20px);color:var(--txt2)}.esi{font-size:clamp(32px,9vw,40px);margin-bottom:8px}.est{font-size:clamp(11px,2.8vw,12px);line-height:1.5}
+    .toast{position:fixed;bottom:calc(60px + var(--safe-bot));left:50%;transform:translateX(-50%);background:var(--green);color:#fff;padding:8px 18px;border-radius:12px;font-size:clamp(11px,2.8vw,12px);font-weight:600;z-index:200;animation:fi .2s;white-space:nowrap;max-width:90%}
+    .fr{display:flex;gap:6px}.f1{flex:1}
+    .bbar{height:8px;border-radius:4px;background:linear-gradient(90deg,#3B82F6 0%,#22C55E 30%,#EAB308 60%,#EF4444 100%);margin-top:10px;position:relative}
+    .bmk{width:14px;height:14px;border-radius:50%;background:#fff;border:3px solid var(--bg);position:absolute;top:-3px;box-shadow:0 0 10px rgba(255,255,255,.4);transition:left .5s}
+    .wp{height:4px;background:var(--bg3);border-radius:2px;margin-top:6px;overflow:hidden}
+    .wpf{height:100%;background:var(--lime);border-radius:2px;transition:width .3s}
+    .cd{width:clamp(20px,5vw,22px);height:clamp(20px,5vw,22px);border-radius:50%;border:2px solid var(--bg4);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;flex-shrink:0;font-size:10px;min-width:20px;min-height:20px}
+    .cd.dn{background:var(--green);border-color:var(--green)}
+    .cust-badge{font-size:clamp(7px,1.8vw,9px);background:rgba(168,85,247,.15);color:var(--purple);padding:1px 5px;border-radius:8px;margin-left:3px}
+
+    /* Desktop: show a label beneath the phone frame */
+    .desk-label{display:none;text-align:center;margin-top:12px;font-size:12px;color:var(--txt2);letter-spacing:1px}
+    @media(min-width:601px){.desk-label{display:block}}
+  </style>
+<script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+<div id="root"></div>
+<script src="config.js"></script>
+<script>
+// FitForge cloud: Clerk login + private per-user sync + AI permission switch.
+// Everything is optional: without config/login the app works exactly as before (data on this phone).
+(function(){
+  var CFG=window.FF_CONFIG||{},KEYS=['plans','wts','prof','cex'],LS=localStorage;
+  var BASE=String(CFG.WORKER_URL||'').replace(/\/+$/,'');
+  var okCfg=/^pk_(test|live)_/.test(String(CFG.CLERK_KEY||''))&&/^https:\/\//.test(BASE)&&String(CFG.CLERK_KEY).indexOf('PASTE')<0&&BASE.indexOf('PASTE')<0;
+  var S={phase:okCfg?'loading':'off',email:'',ai:null,msg:'',mcp:BASE+'/mcp',uid:null,last:0},subs=[],ready=false,timers={},busy=false;
+  function emit(){subs.forEach(function(f){try{f()}catch(e){}})}
+  function set(p){for(var k in p)S[k]=p[k];emit()}
+  function jget(k,d){try{var v=LS.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
+  function meta(){return jget('ff_meta',{})}
+  function setMeta(m){LS.setItem('ff_meta',JSON.stringify(m))}
+  function tok(){var c=window.Clerk;return(c&&c.session)?c.session.getToken():Promise.resolve(null)}
+  function call(path,opt){
+    return tok().then(function(t){
+      if(!t)throw new Error('no token');
+      opt=opt||{};opt.headers=Object.assign({'Content-Type':'application/json'},opt.headers||{},{Authorization:'Bearer '+t});
+      return fetch(BASE+'/api'+path,opt)
+    }).then(function(r){if(!r.ok)throw new Error('http '+r.status);return r.json()})}
+  function hasData(get){return['plans','wts','cex'].some(function(k){var v=get(k);return v&&v.length>0})}
+  function mergeKey(k,loc,rem){
+    if(k==='prof'){var dp=function(p){return !p||(p.name==='User'&&+p.height===170&&+p.weight===70&&+p.age===25)};if(rem===undefined||rem===null||dp(rem))return dp(loc)?(rem||loc):loc;return rem}
+    var a=Array.isArray(loc)?loc:[],b=Array.isArray(rem)?rem:[],id=k==='wts'?'date':'id',seen={},out=[];
+    b.concat(a).forEach(function(x){var key=x&&x[id];if(key===undefined||!seen[key]){if(key!==undefined)seen[key]=1;out.push(x)}});
+    return out}
+  function push(k){
+    var raw=LS.getItem('ff_'+k);if(raw===null)return Promise.resolve();
+    var m=meta(),u=m[k]||Date.now();m[k]=u;setMeta(m);
+    return call('/data/'+k,{method:'PUT',body:JSON.stringify({v:JSON.parse(raw),u:u})})
+      .then(function(r){if(r&&r.stale)return pull()}).catch(function(){})}
+  function pull(manual,first){
+    if(S.phase!=='in')return Promise.resolve(manual?'Sign in first':'');
+    if(busy)return Promise.resolve('');
+    busy=true;
+    return call('/data').then(function(r){
+      var m=meta(),reload=false,pushes=[];
+      var lh=hasData(function(k){return jget('ff_'+k,[])}),rh=hasData(function(k){return r[k]&&r[k].v});
+      if(first&&lh){
+        KEYS.forEach(function(k){
+          var merged=mergeKey(k,jget('ff_'+k,null),r[k]&&r[k].v);
+          if(merged!==undefined&&merged!==null){var js=JSON.stringify(merged);if(js!==LS.getItem('ff_'+k)){LS.setItem('ff_'+k,js);reload=true}m[k]=Date.now();pushes.push(k)}});
+      }else KEYS.forEach(function(k){
+        var rem=r[k],lm=m[k]||0;
+        if(!rem){if(LS.getItem('ff_'+k)!==null){m[k]=lm||Date.now();pushes.push(k)}}
+        else if(rem.u>lm){LS.setItem('ff_'+k,JSON.stringify(rem.v));m[k]=rem.u;reload=true}
+        else if(rem.u<lm){pushes.push(k)}
+      });
+      setMeta(m);ready=true;busy=false;
+      return Promise.all(pushes.map(push)).then(function(){
+        set({last:Date.now()});
+        if(reload){setTimeout(function(){location.reload()},manual?900:50);return 'Updated from cloud ✅'}
+        return 'Synced ✅'})
+    }).catch(function(e){busy=false;var t=String((e&&e.message)||'');return 'Sync failed — '+(t.indexOf('http 401')===0||t==='no token'?'login expired, sign in again':t.indexOf('http 5')===0?'server problem, try later':'check internet')})}
+  function stash(owner){
+    var o={t:Date.now()};KEYS.forEach(function(k){o[k]=jget('ff_'+k,null)});
+    try{LS.setItem('ff_stash_'+owner,JSON.stringify(o))}catch(e){}}
+  function wipeLocal(){KEYS.forEach(function(k){LS.removeItem('ff_'+k)});LS.removeItem('ff_meta')}
+  function linkUser(uid){
+    var owner=LS.getItem('ff_owner');
+    if(!owner&&hasData(function(k){return jget('ff_'+k,[])}))stash('guest');
+    if(owner&&owner!==uid){stash(owner);wipeLocal();LS.setItem('ff_owner',uid);location.reload();return Promise.resolve()}
+    LS.setItem('ff_owner',uid);
+    return pull(false,!owner).then(function(){return call('/ai').then(function(r){set({ai:!!r.enabled})}).catch(function(){})})}
+  function onClerk(){
+    var c=window.Clerk;
+    if(c&&c.isSignedIn&&c.user){
+      var u=c.user,email=(u.primaryEmailAddress&&u.primaryEmailAddress.emailAddress)||'';
+      if(S.uid!==u.id){S.uid=u.id;set({phase:'in',email:email});linkUser(u.id)}else if(S.email!==email)set({email:email})
+    }else{ready=false;S.uid=null;set({phase:'out',email:'',ai:null})}}
+  function loadScript(src,attrs){return new Promise(function(res,rej){
+    var s=document.createElement('script');s.src=src;s.async=true;s.crossOrigin='anonymous';
+    for(var k in(attrs||{}))s.setAttribute(k,attrs[k]);
+    s.onload=res;s.onerror=function(){rej(new Error('load failed'))};document.head.appendChild(s)})}
+  function boot(){
+    var host=atob(CFG.CLERK_KEY.split('_')[2]).replace(/\$+$/,'');
+    loadScript('https://'+host+'/npm/@clerk/ui@1/dist/ui.browser.js')
+      .then(function(){return loadScript('https://'+host+'/npm/@clerk/clerk-js@6/dist/clerk.browser.js',{'data-clerk-publishable-key':CFG.CLERK_KEY})})
+      .then(function(){return window.Clerk.load({ui:{ClerkUI:window.__internal_ClerkUICtor}})})
+      .then(function(){window.Clerk.addListener(onClerk);onClerk()})
+      .catch(function(){set({phase:'error',msg:'Login could not load (are you offline?). Your data is safe on this phone.'})})}
+  window.ffCloud={
+    state:S,
+    subscribe:function(f){subs.push(f);return function(){subs=subs.filter(function(x){return x!==f})}},
+    signIn:function(){if(window.Clerk)window.Clerk.openSignIn({})},
+    signOut:function(){return window.Clerk?window.Clerk.signOut():Promise.resolve()},
+    pull:function(manual){return pull(manual,false)},
+    changed:function(k){
+      if(!LS.getItem('ff_owner'))return;
+      var m=meta();m[k]=Date.now();setMeta(m);
+      if(!ready||S.phase!=='in')return;
+      clearTimeout(timers[k]);timers[k]=setTimeout(function(){push(k)},800)},
+    setAi:function(on){return call('/ai',{method:'PUT',body:JSON.stringify({enabled:!!on})})
+      .then(function(r){set({ai:!!r.enabled});return 'AI access '+(r.enabled?'ON':'OFF')}).catch(function(){return 'Could not change — check internet'})},
+    copyMcp:function(){var t=S.mcp;
+      return(navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(t).then(function(){return 'Link copied ✅'}):Promise.reject())
+        .catch(function(){window.prompt('Copy this link:',t);return ''})},
+    checkServer:function(){return fetch(BASE+'/').then(function(r){return r.text()}).catch(function(){return 'Could not reach the server. Check the Worker address in config.js and your internet.'})},
+    wipeCloud:function(){return S.phase==='in'?call('/data',{method:'DELETE'}):Promise.resolve()}
+  };
+  if(okCfg)boot();
+  window.addEventListener('load',function(){if(S.phase==='in')pull()});
+  document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible'&&S.phase==='in')pull()});
+})();
+</script>
+<script type="text/babel">
+const {useState,useEffect,useRef}=React;
+
+const EX_DB=[
+{id:'c1',name:'Push Ups',m:'Chest',t:'reps',ic:'💪',s:3,r:15,desc:'Classic chest builder. Keep body straight, lower chest to floor.'},
+{id:'c2',name:'Wide Push Ups',m:'Chest',t:'reps',ic:'💪',s:3,r:12,desc:'Wider grip targets outer chest more.'},
+{id:'c3',name:'Diamond Push Ups',m:'Chest',t:'reps',ic:'💎',s:3,r:10,desc:'Hands in diamond shape. Targets triceps and inner chest.'},
+{id:'c4',name:'Incline Push Ups',m:'Chest',t:'reps',ic:'📐',s:3,r:15,desc:'Hands on elevated surface. Easier variation for beginners.'},
+{id:'c5',name:'Decline Push Ups',m:'Chest',t:'reps',ic:'⬇️',s:3,r:12,desc:'Feet elevated. Harder, targets upper chest.'},
+{id:'c6',name:'Archer Push Ups',m:'Chest',t:'reps',ic:'🏹',s:3,r:8,desc:'One arm extended wide. Advanced unilateral chest work.'},
+{id:'c7',name:'Clap Push Ups',m:'Chest',t:'reps',ic:'👏',s:3,r:8,desc:'Explosive push up with clap at top.'},
+{id:'c8',name:'Chest Dips',m:'Chest',t:'reps',ic:'🔻',s:3,r:10,desc:'Lean forward on parallel bars for chest focus.'},
+{id:'c9',name:'Chest Squeeze',m:'Chest',t:'timed',ic:'🤲',s:3,tm:30,desc:'Press palms together at chest and squeeze hard.'},
+{id:'c10',name:'Chest Fly (Bands)',m:'Chest',t:'reps',ic:'🦅',s:3,r:12,desc:'Resistance band flyes. Arms wide then squeeze.'},
+{id:'c11',name:'Hindu Push Ups',m:'Chest',t:'reps',ic:'🙏',s:3,r:10,desc:'Flowing movement from downward dog to cobra. Full upper body.'},
+{id:'b1',name:'Pull Ups',m:'Back',t:'reps',ic:'🔝',s:3,r:8,desc:'Overhand grip, pull chin above bar. King of back exercises.'},
+{id:'b2',name:'Chin Ups',m:'Back',t:'reps',ic:'💪',s:3,r:8,desc:'Underhand grip pull up. Also works biceps heavily.'},
+{id:'b3',name:'Inverted Rows',m:'Back',t:'reps',ic:'↗️',s:3,r:12,desc:'Under a table or low bar. Pull chest up.'},
+{id:'b4',name:'Superman Hold',m:'Back',t:'timed',ic:'🦸',s:3,tm:30,desc:'Face down, lift arms and legs. Hold for back strength.'},
+{id:'b5',name:'Superman Reps',m:'Back',t:'reps',ic:'🦸',s:3,r:15,desc:'Same as hold but lift up and down controlled.'},
+{id:'b6',name:'Back Extension',m:'Back',t:'reps',ic:'↗️',s:3,r:15,desc:'Strengthen lower back with controlled extensions.'},
+{id:'b7',name:'Dead Hang',m:'Back',t:'timed',ic:'🤲',s:3,tm:30,desc:'Hang from bar. Decompresses spine, builds grip.'},
+{id:'b8',name:'Wide Grip Pull Ups',m:'Back',t:'reps',ic:'↔️',s:3,r:6,desc:'Wider grip targets lats more intensely.'},
+{id:'b9',name:'Band Rows',m:'Back',t:'reps',ic:'🔗',s:3,r:15,desc:'Stand on band, pull to chest. Great home exercise.'},
+{id:'b10',name:'Scapular Push Ups',m:'Back',t:'reps',ic:'🔄',s:3,r:15,desc:'Plank position, only move shoulder blades.'},
+{id:'b11',name:'Reverse Snow Angels',m:'Back',t:'reps',ic:'👼',s:3,r:12,desc:'Face down, move arms from sides to overhead in arc.'},
+{id:'b12',name:'Prone Y Raise',m:'Back',t:'reps',ic:'🙆',s:3,r:12,desc:'Face down, raise arms in Y shape. Upper back.'},
+{id:'l1',name:'Squats',m:'Legs',t:'reps',ic:'🦵',s:4,r:15,desc:'Feet shoulder-width, go deep. King of leg exercises.'},
+{id:'l2',name:'Jump Squats',m:'Legs',t:'reps',ic:'⬆️',s:3,r:12,desc:'Explosive squat with jump at top.'},
+{id:'l3',name:'Sumo Squats',m:'Legs',t:'reps',ic:'🦵',s:3,r:15,desc:'Wide stance, toes out. Inner thighs and glutes.'},
+{id:'l4',name:'Pistol Squats',m:'Legs',t:'reps',ic:'🔫',s:3,r:5,desc:'Single leg squat. Very advanced balance move.'},
+{id:'l5',name:'Bulgarian Split Squats',m:'Legs',t:'reps',ic:'🇧🇬',s:3,r:10,desc:'Rear foot on chair. Amazing for quads.'},
+{id:'l6',name:'Lunges',m:'Legs',t:'reps',ic:'🏃',s:3,r:12,desc:'Step forward, lower back knee. Alternate legs.'},
+{id:'l7',name:'Reverse Lunges',m:'Legs',t:'reps',ic:'↩️',s:3,r:12,desc:'Step backward. Easier on knees.'},
+{id:'l8',name:'Walking Lunges',m:'Legs',t:'reps',ic:'🚶',s:3,r:20,desc:'Continuous walking lunges. Great finisher.'},
+{id:'l9',name:'Side Lunges',m:'Legs',t:'reps',ic:'↔️',s:3,r:12,desc:'Step sideways and squat. Inner thighs.'},
+{id:'l10',name:'Wall Sit',m:'Legs',t:'timed',ic:'🧱',s:3,tm:45,desc:'Back against wall, thighs parallel. Hold and burn.'},
+{id:'l11',name:'Calf Raises',m:'Legs',t:'reps',ic:'🦶',s:3,r:20,desc:'Rise on toes, squeeze calves at top.'},
+{id:'l12',name:'Single Leg Calf Raises',m:'Legs',t:'reps',ic:'🦶',s:3,r:15,desc:'One leg for extra intensity.'},
+{id:'l13',name:'Glute Bridge',m:'Legs',t:'reps',ic:'🍑',s:3,r:15,desc:'On back, push hips up. Squeeze glutes.'},
+{id:'l14',name:'Single Leg Glute Bridge',m:'Legs',t:'reps',ic:'🍑',s:3,r:12,desc:'One leg extended. Much harder.'},
+{id:'l15',name:'Donkey Kicks',m:'Legs',t:'reps',ic:'🫏',s:3,r:15,desc:'All fours, kick one leg back and up.'},
+{id:'l16',name:'Fire Hydrants',m:'Legs',t:'reps',ic:'🔥',s:3,r:15,desc:'All fours, lift knee out to side.'},
+{id:'l17',name:'Step Ups',m:'Legs',t:'reps',ic:'🪜',s:3,r:12,desc:'Step onto chair or bench. Functional.'},
+{id:'l18',name:'Box Jumps',m:'Legs',t:'reps',ic:'📦',s:3,r:10,desc:'Jump onto elevated surface. Explosive power.'},
+{id:'l19',name:'Squat Hold',m:'Legs',t:'timed',ic:'🦵',s:3,tm:30,desc:'Hold bottom of squat. Endurance builder.'},
+{id:'l20',name:'Curtsy Lunges',m:'Legs',t:'reps',ic:'🦵',s:3,r:12,desc:'Step behind and across. Targets outer glutes.'},
+{id:'l21',name:'Frog Jumps',m:'Legs',t:'reps',ic:'🐸',s:3,r:10,desc:'Deep squat, jump forward. Explosive and fun.'},
+{id:'a1',name:'Bicep Curls',m:'Arms',t:'reps',ic:'💪',s:3,r:12,desc:'Curl weights or bottles up. Squeeze at top.'},
+{id:'a2',name:'Hammer Curls',m:'Arms',t:'reps',ic:'🔨',s:3,r:12,desc:'Palms facing each other during curl.'},
+{id:'a3',name:'Concentration Curls',m:'Arms',t:'reps',ic:'🎯',s:3,r:10,desc:'Seated, elbow on thigh. Isolates bicep.'},
+{id:'a4',name:'Tricep Dips',m:'Arms',t:'reps',ic:'🔻',s:3,r:12,desc:'Chair or bench dips for triceps.'},
+{id:'a5',name:'Tricep Kickbacks',m:'Arms',t:'reps',ic:'↩️',s:3,r:12,desc:'Bent over, extend arm straight back.'},
+{id:'a6',name:'Overhead Tricep Extension',m:'Arms',t:'reps',ic:'⬆️',s:3,r:12,desc:'Weight behind head, extend arms up.'},
+{id:'a7',name:'Close Grip Push Ups',m:'Arms',t:'reps',ic:'💪',s:3,r:12,desc:'Hands close together. Heavy tricep work.'},
+{id:'a8',name:'Wrist Curls',m:'Arms',t:'reps',ic:'✊',s:3,r:20,desc:'Forearms on knees, curl wrists up.'},
+{id:'a9',name:'Towel Curls',m:'Arms',t:'reps',ic:'🧴',s:3,r:12,desc:'Towel under foot, curl both ends. No weights needed.'},
+{id:'a10',name:'Chin Up Hold',m:'Arms',t:'timed',ic:'💪',s:3,tm:15,desc:'Hold chin above bar. Isometric bicep burn.'},
+{id:'s1',name:'Shoulder Press',m:'Shoulders',t:'reps',ic:'⬆️',s:3,r:12,desc:'Press weights overhead. Full extension.'},
+{id:'s2',name:'Lateral Raises',m:'Shoulders',t:'reps',ic:'↔️',s:3,r:15,desc:'Raise arms to sides. Builds shoulder width.'},
+{id:'s3',name:'Front Raises',m:'Shoulders',t:'reps',ic:'⬆️',s:3,r:12,desc:'Raise arms to front, one or both.'},
+{id:'s4',name:'Pike Push Ups',m:'Shoulders',t:'reps',ic:'🔺',s:3,r:10,desc:'Inverted V push up. Great for shoulders.'},
+{id:'s5',name:'Wall Handstand Hold',m:'Shoulders',t:'timed',ic:'🤸',s:3,tm:20,desc:'Handstand against wall. Massive shoulder builder.'},
+{id:'s6',name:'Face Pulls (Band)',m:'Shoulders',t:'reps',ic:'🔗',s:3,r:15,desc:'Pull band toward face. Rear delts and posture.'},
+{id:'s7',name:'Shoulder Shrugs',m:'Shoulders',t:'reps',ic:'🤷',s:3,r:15,desc:'Shrug shoulders to ears. Traps.'},
+{id:'s8',name:'Arnold Press',m:'Shoulders',t:'reps',ic:'💪',s:3,r:10,desc:'Rotating press. All three delt heads.'},
+{id:'s9',name:'Y Raises',m:'Shoulders',t:'reps',ic:'🙆',s:3,r:12,desc:'Arms in Y shape while face down.'},
+{id:'s10',name:'Band Pull Aparts',m:'Shoulders',t:'reps',ic:'↔️',s:3,r:15,desc:'Hold band, pull apart to chest. Rear delts.'},
+{id:'s11',name:'Reverse Fly',m:'Shoulders',t:'reps',ic:'🦅',s:3,r:12,desc:'Bent forward, raise arms to sides. Rear delts.'},
+{id:'co1',name:'Plank',m:'Core',t:'timed',ic:'🧱',s:3,tm:60,desc:'Forearm plank. Keep body straight as a board.'},
+{id:'co2',name:'Side Plank',m:'Core',t:'timed',ic:'📏',s:3,tm:30,desc:'On one forearm, feet stacked. Obliques.'},
+{id:'co3',name:'Plank Shoulder Taps',m:'Core',t:'reps',ic:'👋',s:3,r:20,desc:'Plank, tap opposite shoulder. Anti-rotation.'},
+{id:'co4',name:'Crunches',m:'Core',t:'reps',ic:'🔥',s:3,r:20,desc:'Curl shoulders up. Don\'t pull neck.'},
+{id:'co5',name:'Bicycle Crunches',m:'Core',t:'reps',ic:'🚴',s:3,r:20,desc:'Elbow to opposite knee. Great for obliques.'},
+{id:'co6',name:'Reverse Crunches',m:'Core',t:'reps',ic:'🔄',s:3,r:15,desc:'Knees to chest. Lower abs focus.'},
+{id:'co7',name:'Mountain Climbers',m:'Core',t:'timed',ic:'⛰️',s:3,tm:30,desc:'Plank, drive knees to chest fast.'},
+{id:'co8',name:'Leg Raises',m:'Core',t:'reps',ic:'🦵',s:3,r:15,desc:'Raise straight legs to 90°. Lower abs.'},
+{id:'co9',name:'Hanging Leg Raises',m:'Core',t:'reps',ic:'🦵',s:3,r:10,desc:'Hang from bar, raise legs. Advanced.'},
+{id:'co10',name:'Flutter Kicks',m:'Core',t:'timed',ic:'🦵',s:3,tm:30,desc:'Small alternating leg kicks on back.'},
+{id:'co11',name:'Russian Twists',m:'Core',t:'reps',ic:'🔄',s:3,r:20,desc:'Seated, lean back, rotate side to side.'},
+{id:'co12',name:'Dead Bug',m:'Core',t:'reps',ic:'🪲',s:3,r:12,desc:'On back, extend opposite arm and leg.'},
+{id:'co13',name:'Hollow Body Hold',m:'Core',t:'timed',ic:'🍌',s:3,tm:30,desc:'On back, lift shoulders and legs off ground.'},
+{id:'co14',name:'Toe Touches',m:'Core',t:'reps',ic:'🦶',s:3,r:20,desc:'On back, legs up, reach to toes.'},
+{id:'co15',name:'V-Ups',m:'Core',t:'reps',ic:'✌️',s:3,r:12,desc:'Arms and legs come up forming V shape.'},
+{id:'co16',name:'Ab Wheel Rollout',m:'Core',t:'reps',ic:'🎡',s:3,r:10,desc:'Roll wheel out and back. Use towel on floor.'},
+{id:'co17',name:'Windshield Wipers',m:'Core',t:'reps',ic:'🔄',s:3,r:10,desc:'Legs up, drop side to side. Advanced.'},
+{id:'co18',name:'Plank to Push Up',m:'Core',t:'reps',ic:'🧱',s:3,r:10,desc:'Forearm plank to hands and back. Core stability.'},
+{id:'ca1',name:'Jumping Jacks',m:'Cardio',t:'timed',ic:'⭐',s:3,tm:60,desc:'Feet jump out, arms overhead. Classic.'},
+{id:'ca2',name:'High Knees',m:'Cardio',t:'timed',ic:'🏃',s:3,tm:30,desc:'Run in place, knees high as possible.'},
+{id:'ca3',name:'Butt Kicks',m:'Cardio',t:'timed',ic:'🦶',s:3,tm:30,desc:'Run in place, heels to glutes.'},
+{id:'ca4',name:'Jump Rope',m:'Cardio',t:'timed',ic:'🤸',s:3,tm:60,desc:'Amazing cardio. Mimic motion without rope.'},
+{id:'ca5',name:'Shadow Boxing',m:'Cardio',t:'timed',ic:'🥊',s:3,tm:60,desc:'Punch combos in air. Stress relief + cardio.'},
+{id:'ca6',name:'Skater Jumps',m:'Cardio',t:'reps',ic:'⛸️',s:3,r:20,desc:'Jump side to side like speed skater.'},
+{id:'ca7',name:'Tuck Jumps',m:'Cardio',t:'reps',ic:'🦘',s:3,r:10,desc:'Jump, tuck knees to chest at top.'},
+{id:'ca8',name:'Sprint in Place',m:'Cardio',t:'timed',ic:'🏃',s:3,tm:20,desc:'Maximum effort sprint without moving.'},
+{id:'ca9',name:'Star Jumps',m:'Cardio',t:'reps',ic:'⭐',s:3,r:12,desc:'Squat, explode into star shape. Fun.'},
+{id:'ca10',name:'Stair Climbing',m:'Cardio',t:'timed',ic:'🪜',s:3,tm:120,desc:'Walk or run stairs. Best real cardio.'},
+{id:'ca11',name:'Burpee Broad Jump',m:'Cardio',t:'reps',ic:'🔥',s:3,r:8,desc:'Burpee then broad jump forward. Intense.'},
+{id:'f1',name:'Burpees',m:'Full Body',t:'reps',ic:'🔥',s:3,r:10,desc:'Squat, plank, push up, jump. Ultimate exercise.'},
+{id:'f2',name:'Bear Crawl',m:'Full Body',t:'timed',ic:'🐻',s:3,tm:30,desc:'Crawl on hands and toes. Total body.'},
+{id:'f3',name:'Inchworm',m:'Full Body',t:'reps',ic:'🐛',s:3,r:8,desc:'Walk hands to plank, walk feet to hands.'},
+{id:'f4',name:'Turkish Get Up',m:'Full Body',t:'reps',ic:'🇹🇷',s:3,r:5,desc:'Lying to standing with weight overhead. Complex.'},
+{id:'f5',name:'Thruster',m:'Full Body',t:'reps',ic:'🚀',s:3,r:12,desc:'Squat into overhead press. Total body.'},
+{id:'f6',name:'Man Maker',m:'Full Body',t:'reps',ic:'👨',s:3,r:6,desc:'Push up, row, squat, press. Ultimate combo.'},
+{id:'f7',name:'Sprawl',m:'Full Body',t:'reps',ic:'🤸',s:3,r:10,desc:'Burpee without push up. Fast cardio.'},
+{id:'f8',name:'Crab Walk',m:'Full Body',t:'timed',ic:'🦀',s:3,tm:30,desc:'On hands and feet face up. Walk around.'},
+{id:'f9',name:'Devil Press',m:'Full Body',t:'reps',ic:'😈',s:3,r:8,desc:'Burpee with dumbbell snatch at top. Brutal.'},
+{id:'st1',name:'Neck Stretch',m:'Stretching',t:'timed',ic:'🧘',s:1,tm:30,desc:'Tilt head each side. Gentle, never force.'},
+{id:'st2',name:'Shoulder Stretch',m:'Stretching',t:'timed',ic:'🧘',s:1,tm:30,desc:'Pull arm across chest. Each side.'},
+{id:'st3',name:'Chest Opener',m:'Stretching',t:'timed',ic:'🧘',s:1,tm:30,desc:'Arms behind back, open chest wide.'},
+{id:'st4',name:'Quad Stretch',m:'Stretching',t:'timed',ic:'🧘',s:1,tm:30,desc:'Pull foot to glute standing. Each side.'},
+{id:'st5',name:'Hamstring Stretch',m:'Stretching',t:'timed',ic:'🧘',s:1,tm:30,desc:'Straight leg forward, reach for toes.'},
+{id:'st6',name:'Hip Flexor Stretch',m:'Stretching',t:'timed',ic:'🧘',s:1,tm:30,desc:'Kneeling lunge, push hips forward.'},
+{id:'st7',name:'Child\'s Pose',m:'Stretching',t:'timed',ic:'🧒',s:1,tm:60,desc:'Kneel, sit back, arms forward. Relaxing.'},
+{id:'st8',name:'Cat-Cow',m:'Stretching',t:'reps',ic:'🐱',s:1,r:10,desc:'All fours, arch and round back. Spine health.'},
+{id:'st9',name:'Pigeon Pose',m:'Stretching',t:'timed',ic:'🐦',s:1,tm:30,desc:'Deep hip opener. Hold each side.'},
+{id:'st10',name:'Cobra Stretch',m:'Stretching',t:'timed',ic:'🐍',s:1,tm:30,desc:'Face down, press chest up. Hip flexors.'},
+{id:'st11',name:'World\'s Greatest Stretch',m:'Stretching',t:'reps',ic:'🌍',s:1,r:6,desc:'Lunge+rotation+hamstring. Covers everything.'},
+{id:'st12',name:'Butterfly Stretch',m:'Stretching',t:'timed',ic:'🦋',s:1,tm:30,desc:'Seated, soles together, press knees down.'},
+{id:'st13',name:'Seated Forward Fold',m:'Stretching',t:'timed',ic:'🧘',s:1,tm:30,desc:'Legs straight, fold forward. Hamstrings and back.'},
+];
+
+const MUSCLES=['All','Chest','Back','Legs','Arms','Shoulders','Core','Cardio','Full Body','Stretching'];
+function ld(k,d){try{const v=localStorage.getItem('ff_'+k);return v?JSON.parse(v):d}catch{return d}}
+function sv(k,v){const j=JSON.stringify(v);if(localStorage.getItem('ff_'+k)!==j){localStorage.setItem('ff_'+k,j);if(window.ffCloud)window.ffCloud.changed(k)}}
+
+function App(){
+  const[pg,setPg]=useState('home');const[plans,setPlans]=useState(()=>ld('plans',[]));const[wts,setWts]=useState(()=>ld('wts',[]));
+  const[prof,setProf]=useState(()=>ld('prof',{name:'User',height:170,weight:70,age:25}));
+  const[cex,setCex]=useState(()=>ld('cex',[]));const[toast,setToast]=useState('');const[modal,setMod]=useState(null);const[ep,setEp]=useState(null);
+  useEffect(()=>{sv('plans',plans)},[plans]);useEffect(()=>{sv('wts',wts)},[wts]);useEffect(()=>{sv('prof',prof)},[prof]);useEffect(()=>{sv('cex',cex)},[cex]);
+  const all=[...EX_DB,...cex];const fE=id=>all.find(e=>e.id===id);
+  const sT=m=>{setToast(m);setTimeout(()=>setToast(''),2e3)};
+  const bmi=prof.height>0?(prof.weight/((prof.height/100)**2)).toFixed(1):0;
+  const bc=bmi<18.5?'Underweight':bmi<25?'Normal':bmi<30?'Overweight':'Obese';
+  const bco=bmi<18.5?'var(--blue)':bmi<25?'var(--green)':bmi<30?'var(--orange)':'var(--red)';
+  const bp2=Math.min(Math.max(((bmi-15)/25)*100,2),98);
+  const gC=p=>{setEp(p||null);setPg('create')};
+
+  return(<div className="shell"><div className="app">
+    <div className="main">
+      {pg==='home'&&<Home plans={plans} prof={prof} bmi={bmi} bc={bc} wts={wts} setPg={setPg} setMod={setMod} fE={fE} gC={gC}/>}
+      {pg==='workouts'&&<Wkts plans={plans} setPlans={setPlans} setMod={setMod} sT={sT} fE={fE} gC={gC}/>}
+      {pg==='create'&&<Crt plans={plans} setPlans={setPlans} setPg={setPg} sT={sT} ep={ep} setEp={setEp} all={all} cex={cex} setCex={setCex} setMod={setMod}/>}
+      {pg==='exercises'&&<ExLib setMod={setMod} all={all} cex={cex} setCex={setCex} sT={sT}/>}
+      {pg==='tracker'&&<Trkr wts={wts} setWts={setWts} prof={prof} sT={sT}/>}
+      {pg==='bmi'&&<BmiPg prof={prof} setProf={setProf} bmi={bmi} bc={bc} bco={bco} bp2={bp2} sT={sT}/>}
+      {pg==='profile'&&<Prof prof={prof} setProf={setProf} plans={plans} wts={wts} cex={cex} sT={sT}/>}
+    </div>
+    <div className="bnav">
+      {[{id:'home',ic:'🏠',l:'Home'},{id:'workouts',ic:'💪',l:'Workouts'},{id:'create',ic:'✨',l:'Create'},{id:'exercises',ic:'🔍',l:'Explore'},{id:'profile',ic:'👤',l:'Profile'}].map(n=>
+        <button key={n.id} className={`ni ${pg===n.id?'on':''}`} onClick={()=>{setPg(n.id);if(n.id==='create')setEp(null)}}><span className="nic">{n.ic}</span>{n.l}</button>)}
+    </div>
+    {modal?.type==='detail'&&<DetMod ex={modal.ex} pe={modal.pe} onClose={()=>setMod(null)}/>}
+    {modal?.type==='timer'&&<TmrMod ex={modal.ex} pe={modal.pe} onClose={()=>setMod(null)} onDone={modal.onDone}/>}
+    {modal?.type==='session'&&<SessMod plan={modal.plan} fE={fE} setMod={setMod} sT={sT}/>}
+    {modal?.type==='crtEx'&&<CrtExMod onClose={()=>setMod(null)} cex={cex} setCex={setCex} sT={sT} onAdd={modal.onAdd} edit={modal.edit}/>}
+    {toast&&<div className="toast">✅ {toast}</div>}
+  </div><div className="desk-label">FITFORGE • Works on all devices</div></div>);
+}
+
+function Home({plans,prof,bmi,bc,wts,setPg,setMod,fE,gC}){
+  const dn=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];const td=dn[new Date().getDay()];
+  const tp=plans.filter(p=>p.days?.includes(td));
+  const h=new Date().getHours();const gr=h<12?'Good Morning':h<17?'Good Afternoon':'Good Evening';
+  const lw=wts.length>0?wts[wts.length-1].value:prof.weight;
+  return(<div>
+    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14}}>
+      <div><div className="pt">FITFORGE</div><div style={{fontSize:'clamp(10px,2.5vw,12px)',color:'var(--txt2)',marginTop:-2}}>{gr}, {prof.name} 💪</div></div>
+      <div style={{width:'clamp(36px,9vw,40px)',height:'clamp(36px,9vw,40px)',borderRadius:12,background:'var(--bg2)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'clamp(16px,4vw,18px)',border:'1px solid var(--bg3)',cursor:'pointer'}} onClick={()=>setPg('profile')}>⚡</div>
+    </div>
+    <div className="stats">
+      <div className="stat" onClick={()=>setPg('tracker')} style={{cursor:'pointer'}}><div className="sv">{lw}</div><div className="sl">Weight (kg)</div></div>
+      <div className="stat" onClick={()=>setPg('bmi')} style={{cursor:'pointer'}}><div className="sv">{bmi}</div><div className="sl">BMI ({bc})</div></div>
+    </div>
+    {tp.length>0?tp.map((p,i)=><div key={i} className="card">
+      <div className="ch"><div className="ct">{p.name}</div><span className="badge bl">{(p.slot||'WORKOUT').toUpperCase()}</span></div>
+      {(p.exercises||[]).slice(0,3).map((pe,j)=>{const ex=fE(pe.eid);if(!ex)return null;return(
+        <div key={j} className="ei" onClick={()=>setMod({type:'detail',ex,pe})}><div className={`eic ${ex.t==='timed'?'tm':''} ${ex.custom?'cu':''}`}>{ex.ic}</div>
+        <div className="einf"><div className="en">{ex.name}{ex.custom&&<span className="cust-badge">⭐</span>}</div><div className="em">{ex.t==='timed'?`${pe.sets||ex.s}×${pe.time||ex.tm}s`:`${pe.sets||ex.s}×${pe.reps||ex.r} reps`}</div></div></div>)})}
+      {p.exercises?.length>3&&<div style={{fontSize:'clamp(9px,2.2vw,10px)',color:'var(--txt2)',textAlign:'center',padding:2}}>+{p.exercises.length-3} more</div>}
+      <button className="bp1" style={{marginTop:8}} onClick={()=>setMod({type:'session',plan:p})}>▶ START WORKOUT</button>
+    </div>):<div className="card"><div className="es"><div className="esi">📋</div><div className="est">No workouts for {td}<br/>Create a plan to start!</div></div><button className="bp1" style={{marginTop:8}} onClick={()=>gC()}>✨ CREATE FIRST PLAN</button></div>}
+    <div className="card" onClick={()=>setPg('tracker')} style={{cursor:'pointer'}}>
+      <div className="ch"><div className="ct">Weight Progress</div><span className="badge bg">TRACKER →</span></div>
+      {wts.length>1?<MC data={wts.slice(-10)}/>:<div style={{fontSize:11,color:'var(--txt2)',padding:'6px 0'}}>Log weight to see chart</div>}
+    </div>
+    <div className="stats">
+      <div className="stat" onClick={()=>setPg('bmi')} style={{cursor:'pointer'}}><div className="sv">⚖️</div><div className="sl">BMI Calc</div></div>
+      <div className="stat" onClick={()=>setPg('exercises')} style={{cursor:'pointer'}}><div className="sv">🔍</div><div className="sl">{EX_DB.length}+ Exercises</div></div>
+    </div>
+  </div>);
+}
+
+function MC({data}){if(!data||data.length<2)return null;const vs=data.map(d=>d.value);const mn=Math.min(...vs)-1;const mx=Math.max(...vs)+1;const rg=mx-mn||1;const w=280,h=60;
+  const pts=vs.map((v,i)=>({x:(i/(vs.length-1))*w,y:h-((v-mn)/rg)*h}));const ln=pts.map((p,i)=>i===0?`M${p.x},${p.y}`:`L${p.x},${p.y}`).join(' ');
+  return(<svg viewBox={`0 0 ${w} ${h}`} style={{width:'100%',height:'clamp(50px,14vw,60px)'}}><defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#E1FF00" stopOpacity=".2"/><stop offset="100%" stopColor="#E1FF00" stopOpacity="0"/></linearGradient></defs>
+    <path d={`${ln} L${pts[pts.length-1].x},${h} L0,${h} Z`} fill="url(#ag)"/><path d={ln} fill="none" stroke="#E1FF00" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>{pts.map((p,i)=><circle key={i} cx={p.x} cy={p.y} r="2.5" fill="#E1FF00"/>)}</svg>);}
+
+function Wkts({plans,setPlans,setMod,sT,fE,gC}){
+  const[ad,setAd]=useState(()=>{const d=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];return d[new Date().getDay()]});const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const fl=plans.filter(p=>p.days?.includes(ad));
+  return(<div>
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end'}}><div><div className="pt">MY WORKOUTS</div><div className="ps">{plans.length} plans</div></div></div>
+    <div className="chips">{days.map(d=><span key={d} className={`chip ${ad===d?'on':''}`} onClick={()=>setAd(d)}>{d}</span>)}</div>
+    {fl.length>0?fl.map((p,i)=><div key={i} className="card">
+      <div className="ch"><div className="ct">{p.name}</div><span className="badge bi">{p.slot||'Anytime'}</span></div>
+      {(p.exercises||[]).map((pe,j)=>{const ex=fE(pe.eid);if(!ex)return null;return(
+        <div key={j} className="ei"><div className={`eic ${ex.t==='timed'?'tm':''} ${ex.custom?'cu':''}`}>{ex.ic}</div>
+        <div className="einf"><div className="en">{ex.name}{ex.custom&&<span className="cust-badge">⭐</span>}</div><div className="em">{ex.t==='timed'?`${pe.sets||ex.s}×${pe.time||ex.tm}s`:`${pe.sets||ex.s}×${pe.reps||ex.r} reps`}</div></div>
+        <div className="ea"><button className="ab ayt" onClick={()=>setMod({type:'detail',ex,pe})}>▶</button><button className="ab ant" onClick={()=>setMod({type:'detail',ex,pe})}>📝</button></div></div>)})}
+      <div style={{display:'flex',gap:6,marginTop:8}}><button className="bp1" style={{flex:1}} onClick={()=>setMod({type:'session',plan:p})}>▶ START</button>
+        <button className="bsm" style={{background:'var(--bg3)',color:'var(--txt)'}} onClick={()=>gC(p)}>✏️</button>
+        <button className="bsm" style={{background:'rgba(239,68,68,.1)',color:'var(--red)'}} onClick={()=>{if(confirm('Delete "'+p.name+'"?')){setPlans(plans.filter(x=>x.id!==p.id));sT('Deleted')}}}>🗑️</button></div>
+    </div>):<div className="es"><div className="esi">📋</div><div className="est">No plans for {ad}</div></div>}
+    <button className="bp1" style={{marginTop:6}} onClick={()=>gC()}>✨ CREATE NEW PLAN</button>
+  </div>);
+}
+
+function Crt({plans,setPlans,setPg,sT,ep,setEp,all,cex,setCex,setMod}){
+  const[nm,setNm]=useState(ep?.name||'');const[slot,setSlot]=useState(ep?.slot||'Morning');const[sd,setSd]=useState(ep?.days||[]);const[exl,setExl]=useState(ep?.exercises||[]);
+  const[shS,setShS]=useState(false);const[srch,setSrch]=useState('');const[flt,setFlt]=useState('All');const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const togD=d=>setSd(p=>p.includes(d)?p.filter(x=>x!==d):[...p,d]);
+  const fd=all.filter(e=>{const ms=e.name.toLowerCase().includes(srch.toLowerCase())||e.m.toLowerCase().includes(srch.toLowerCase());const mf=flt==='All'||e.m===flt;return ms&&mf});
+  const noM=srch.length>1&&fd.length===0;
+  const aE=ex=>{if(exl.find(e=>e.eid===ex.id)){sT('Already added');return}setExl([...exl,{eid:ex.id,sets:ex.s,reps:ex.r,time:ex.tm,youtubeLink:'',notes:''}]);sT(`${ex.name} added`)};
+  const rE=id=>setExl(exl.filter(e=>e.eid!==id));
+  const uE=(id,f,v)=>setExl(exl.map(e=>e.eid===id?{...e,[f]:v}:e));
+  const mvE=(i,d)=>{const n=[...exl];const ni=i+d;if(ni<0||ni>=n.length)return;[n[i],n[ni]]=[n[ni],n[i]];setExl(n)};
+  const save=()=>{if(!nm.trim()){sT('Enter name');return}if(sd.length===0){sT('Select days');return}if(exl.length===0){sT('Add exercises');return}
+    const pl={id:ep?.id||Date.now().toString(),name:nm.trim(),slot,days:sd,exercises:exl,ca:ep?.ca||new Date().toISOString()};
+    if(ep){setPlans(plans.map(p=>p.id===ep.id?pl:p))}else{setPlans([...plans,pl])}sT(ep?'Updated!':'Created!');setEp(null);setPg('workouts')};
+
+  return(<div>
+    <div className="pt">{ep?'EDIT PLAN':'CREATE PLAN'}</div><div className="ps">Unlimited exercises & plans ♾️</div>
+    <div className="ig"><div className="il">Plan Name</div><input className="inp" placeholder="e.g. Morning Power" value={nm} onChange={e=>setNm(e.target.value)}/></div>
+    <div className="ig"><div className="il">Time Slot</div><div className="chips">{['Morning','Evening','Custom'].map(s=><span key={s} className={`chip ${slot===s?'on':''}`} onClick={()=>setSlot(s)}>{s==='Morning'?'🌅 ':s==='Evening'?'🌙 ':'🕐 '}{s}</span>)}</div></div>
+    <div className="ig"><div className="il">Days</div><div className="chips">{days.map(d=><span key={d} className={`chip ${sd.includes(d)?'on':''}`} onClick={()=>togD(d)}>{d}</span>)}</div></div>
+    <div className="il" style={{marginTop:10}}>Exercises ({exl.length}) ♾️</div>
+    {exl.map((pe,i)=>{const ex=all.find(e=>e.id===pe.eid);if(!ex)return null;return(
+      <div key={pe.eid} className="card" style={{padding:'clamp(8px,2vw,10px)'}}>
+        <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:5}}>
+          <div style={{display:'flex',flexDirection:'column',gap:1}}><button className="ab" style={{width:18,height:14,fontSize:9,background:'var(--bg3)',color:'var(--txt2)',borderRadius:4}} onClick={()=>mvE(i,-1)}>▲</button><button className="ab" style={{width:18,height:14,fontSize:9,background:'var(--bg3)',color:'var(--txt2)',borderRadius:4}} onClick={()=>mvE(i,1)}>▼</button></div>
+          <div className={`eic ${ex.t==='timed'?'tm':''} ${ex.custom?'cu':''}`} style={{width:30,height:30,fontSize:13}}>{ex.ic}</div>
+          <div style={{flex:1,minWidth:0}}><div className="en">{ex.name}{ex.custom&&<span className="cust-badge">⭐</span>}</div><div className="em">{ex.m}</div></div>
+          <button className="ab adl" onClick={()=>rE(pe.eid)}>✕</button>
+        </div>
+        <div className="fr" style={{marginBottom:4}}><div className="f1"><div className="il">Sets</div><input className="inp" type="number" value={pe.sets||''} onChange={e=>uE(pe.eid,'sets',parseInt(e.target.value)||0)} style={{padding:6,fontSize:12}}/></div>
+          {ex.t==='timed'?<div className="f1"><div className="il">Time (sec)</div><input className="inp" type="number" value={pe.time||''} onChange={e=>uE(pe.eid,'time',parseInt(e.target.value)||0)} style={{padding:6,fontSize:12}}/></div>
+          :<div className="f1"><div className="il">Reps</div><input className="inp" type="number" value={pe.reps||''} onChange={e=>uE(pe.eid,'reps',parseInt(e.target.value)||0)} style={{padding:6,fontSize:12}}/></div>}</div>
+        <div className="il">🔗 YouTube Link</div>
+        <input className="inp" placeholder="Paste YouTube link..." value={pe.youtubeLink||''} onChange={e=>uE(pe.eid,'youtubeLink',e.target.value)} style={{padding:6,fontSize:11,marginBottom:3}}/>
+        {pe.youtubeLink&&<a href={pe.youtubeLink} target="_blank" rel="noopener" style={{fontSize:10,color:'var(--red)',textDecoration:'none',display:'inline-block',marginBottom:3}}>▶ Watch Tutorial</a>}
+        <div className="il" style={{marginTop:2}}>📝 Notes</div>
+        <textarea className="inp" placeholder="Why this exercise? Reminders..." value={pe.notes||''} onChange={e=>uE(pe.eid,'notes',e.target.value)} rows={2} style={{padding:6,fontSize:11}}/>
+      </div>)})}
+    {shS?<div className="card">
+      <div className="sb" style={{margin:'0 0 6px'}}><span>🔍</span><input placeholder="Search..." value={srch} onChange={e=>setSrch(e.target.value)} autoFocus/>{srch&&<span style={{cursor:'pointer',color:'var(--txt2)'}} onClick={()=>setSrch('')}>✕</span>}</div>
+      <div className="chips" style={{marginBottom:6}}>{MUSCLES.map(m=><span key={m} className={`chip ${flt===m?'on':''}`} onClick={()=>setFlt(m)} style={{fontSize:9,padding:'3px 7px'}}>{m}</span>)}</div>
+      <div style={{maxHeight:'clamp(180px,35vh,250px)',overflowY:'auto'}}>
+        {fd.map(ex=>{const added=exl.find(e=>e.eid===ex.id);return(
+          <div key={ex.id} className="ei" onClick={()=>!added&&aE(ex)} style={{opacity:added?.6:1}}>
+            <div className={`eic ${ex.t==='timed'?'tm':''} ${ex.custom?'cu':''}`} style={{width:30,height:30,fontSize:13}}>{ex.ic}</div>
+            <div className="einf"><div className="en">{ex.name}{ex.custom&&<span className="cust-badge">⭐</span>}</div><div className="em">{ex.m}</div></div>
+            {added?<span style={{fontSize:9,color:'var(--green)'}}>✓</span>:<button className="ab aad" onClick={e=>{e.stopPropagation();aE(ex)}}>+</button>}</div>)})}
+        {noM&&<div className="card" style={{textAlign:'center',padding:12,background:'rgba(168,85,247,.06)',border:'1px dashed var(--purple)'}}>
+          <div style={{fontSize:24,marginBottom:4}}>🤔</div><div style={{fontSize:11,fontWeight:600}}>"{srch}" not found</div><div style={{fontSize:10,color:'var(--txt2)',marginBottom:8}}>Create it as a custom exercise!</div>
+          <button className="bp1" style={{background:'linear-gradient(135deg,var(--purple),var(--pink))',fontSize:11,padding:8}} onClick={()=>setMod({type:'crtEx',onAdd:ex=>{aE(ex);setSrch('')}})}>⭐ CREATE CUSTOM</button>
+        </div>}</div>
+      <div className="fr" style={{marginTop:6}}><button className="bs1 f1" onClick={()=>setShS(false)}>Done</button><button className="bsm" style={{background:'linear-gradient(135deg,var(--purple),var(--pink))',color:'#fff',padding:'8px 12px'}} onClick={()=>setMod({type:'crtEx',onAdd:ex=>{aE(ex)}})}>⭐ Custom</button></div>
+    </div>:<button className="bs1" onClick={()=>setShS(true)} style={{marginBottom:8}}>🔍 Search & Add Exercises</button>}
+    <button className="bp1" onClick={save} style={{marginTop:4}}>✅ {ep?'UPDATE':'SAVE'} PLAN</button>
+  </div>);
+}
+
+function ExLib({setMod,all,cex,setCex,sT}){
+  const[srch,setSrch]=useState('');const[flt,setFlt]=useState('All');
+  const fd=all.filter(e=>{const ms=e.name.toLowerCase().includes(srch.toLowerCase())||e.m.toLowerCase().includes(srch.toLowerCase());const mf=flt==='All'||e.m===flt;return ms&&mf});
+  const noM=srch.length>1&&fd.length===0;
+  return(<div>
+    <div className="pt">EXERCISE LIBRARY</div><div className="ps">{all.length} exercises ({cex.length} custom) ♾️</div>
+    <div className="sb"><span>🔍</span><input placeholder="Search..." value={srch} onChange={e=>setSrch(e.target.value)}/>{srch&&<span style={{cursor:'pointer',color:'var(--txt2)'}} onClick={()=>setSrch('')}>✕</span>}</div>
+    <div className="chips">{MUSCLES.map(m=><span key={m} className={`chip ${flt===m?'on':''}`} onClick={()=>setFlt(m)}>{m}</span>)}</div>
+    <button className="bs1" style={{marginBottom:8,borderColor:'var(--purple)',color:'var(--purple)'}} onClick={()=>setMod({type:'crtEx',onAdd:()=>{}})}>⭐ Create Custom Exercise</button>
+    {fd.map(ex=><div key={ex.id} className="ei" onClick={()=>setMod({type:'detail',ex,pe:{}})}>
+      <div className={`eic ${ex.t==='timed'?'tm':''} ${ex.custom?'cu':''}`}>{ex.ic}</div>
+      <div className="einf"><div className="en">{ex.name}{ex.custom&&<span className="cust-badge">⭐ Custom</span>}</div><div className="em">{ex.m} • {ex.t==='timed'?`${ex.s}×${ex.tm}s`:`${ex.s}×${ex.r}`}</div></div>
+      {ex.custom?<button className="ab adl" onClick={e=>{e.stopPropagation();if(confirm('Delete?')){setCex(cex.filter(c=>c.id!==ex.id));sT('Deleted')}}}>🗑</button>:<span style={{color:'var(--txt2)',fontSize:12}}>→</span>}
+    </div>)}
+    {noM&&<div className="card" style={{textAlign:'center',padding:14,background:'rgba(168,85,247,.06)',border:'1px dashed var(--purple)'}}><div style={{fontSize:28,marginBottom:4}}>🤔</div><div style={{fontSize:12,fontWeight:600}}>"{srch}" not found</div><div style={{fontSize:10,color:'var(--txt2)',marginBottom:8}}>Create your own!</div>
+      <button className="bp1" style={{background:'linear-gradient(135deg,var(--purple),var(--pink))',fontSize:11,padding:8}} onClick={()=>setMod({type:'crtEx',onAdd:()=>setSrch('')})}>⭐ CREATE CUSTOM</button></div>}
+  </div>);
+}
+
+function CrtExMod({onClose,cex,setCex,sT,onAdd,edit}){
+  const[nm,setNm]=useState(edit?.name||'');const[ms,setMs]=useState(edit?.m||'Chest');const[tp,setTp]=useState(edit?.t||'reps');const[ic,setIc]=useState(edit?.ic||'⭐');
+  const[s,setS]=useState(edit?.s||3);const[r,setR]=useState(edit?.r||12);const[tm,setTm]=useState(edit?.tm||30);const[desc,setDesc]=useState(edit?.desc||'');const[yt,setYt]=useState(edit?.youtubeLink||'');
+  const icons=['⭐','💪','🔥','🏋️','🧱','🦵','🤸','🥊','🎯','🚀','⚡','🏃','🔺','🐻','🦅','💎','🎡','🌟','❤️','🏆'];
+  const muscles=['Chest','Back','Legs','Arms','Shoulders','Core','Cardio','Full Body','Stretching'];
+  const save=()=>{if(!nm.trim()){sT('Enter name');return}const ex={id:edit?.id||'cx_'+Date.now(),name:nm.trim(),m:ms,t:tp,ic,s,r,tm,desc:desc.trim(),youtubeLink:yt,custom:true};
+    if(edit){setCex(cex.map(e=>e.id===edit.id?ex:e))}else{setCex([...cex,ex])}sT(edit?'Updated!':'Created!');if(onAdd&&!edit)onAdd(ex);onClose()};
+  return(<div className="mo" onClick={onClose}><div className="mb" onClick={e=>e.stopPropagation()}>
+    <div className="mh"/><div className="mt">⭐ {edit?'Edit':'Create'} Custom Exercise</div>
+    <div className="ig"><div className="il">Name</div><input className="inp" placeholder="e.g. Kettlebell Swing" value={nm} onChange={e=>setNm(e.target.value)} autoFocus/></div>
+    <div className="ig"><div className="il">Icon</div><div className="chips">{icons.map(i=><span key={i} className={`chip ${ic===i?'on':''}`} onClick={()=>setIc(i)} style={{fontSize:14,padding:'3px 6px'}}>{i}</span>)}</div></div>
+    <div className="ig"><div className="il">Muscle Group</div><div className="chips">{muscles.map(m=><span key={m} className={`chip ${ms===m?'on':''}`} onClick={()=>setMs(m)}>{m}</span>)}</div></div>
+    <div className="ig"><div className="il">Type</div><div className="chips"><span className={`chip ${tp==='reps'?'on':''}`} onClick={()=>setTp('reps')}>💪 Reps</span><span className={`chip ${tp==='timed'?'on':''}`} onClick={()=>setTp('timed')}>⏱️ Timed</span></div></div>
+    <div className="fr"><div className="f1 ig"><div className="il">Sets</div><input className="inp" type="number" value={s} onChange={e=>setS(parseInt(e.target.value)||1)}/></div>
+      {tp==='timed'?<div className="f1 ig"><div className="il">Time (sec)</div><input className="inp" type="number" value={tm} onChange={e=>setTm(parseInt(e.target.value)||10)}/></div>
+      :<div className="f1 ig"><div className="il">Reps</div><input className="inp" type="number" value={r} onChange={e=>setR(parseInt(e.target.value)||1)}/></div>}</div>
+    <div className="ig"><div className="il">🔗 YouTube Link</div><input className="inp" placeholder="Paste tutorial link..." value={yt} onChange={e=>setYt(e.target.value)}/></div>
+    {yt&&<a href={yt} target="_blank" rel="noopener" style={{fontSize:10,color:'var(--red)',textDecoration:'none',display:'block',marginBottom:6}}>▶ Watch Tutorial</a>}
+    <div className="ig"><div className="il">Description</div><textarea className="inp" placeholder="How to do it, tips..." value={desc} onChange={e=>setDesc(e.target.value)} rows={2}/></div>
+    <button className="bp1" onClick={save} style={{background:'linear-gradient(135deg,var(--purple),var(--pink))'}}>⭐ {edit?'UPDATE':'CREATE'}</button>
+    <button className="bs1" style={{marginTop:6}} onClick={onClose}>Cancel</button>
+  </div></div>);
+}
+
+function DetMod({ex,pe,onClose}){
+  return(<div className="mo" onClick={onClose}><div className="mb" onClick={e=>e.stopPropagation()}>
+    <div className="mh"/>
+    <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:12}}>
+      <div className={`eic ${ex.t==='timed'?'tm':''} ${ex.custom?'cu':''}`} style={{width:44,height:44,fontSize:20}}>{ex.ic}</div>
+      <div><div style={{fontWeight:700,fontSize:'clamp(14px,3.5vw,15px)'}}>{ex.name}{ex.custom&&<span className="cust-badge">⭐ Custom</span>}</div><div style={{fontSize:11,color:'var(--txt2)'}}>{ex.m} • {ex.t==='timed'?'Timed':'Reps'}</div></div></div>
+    {ex.desc&&<div className="card"><div style={{fontSize:12,lineHeight:1.6}}>{ex.desc}</div></div>}
+    <div className="stats"><div className="stat"><div className="sv">{pe?.sets||ex.s}</div><div className="sl">Sets</div></div><div className="stat"><div className="sv">{ex.t==='timed'?(pe?.time||ex.tm)+'s':(pe?.reps||ex.r)}</div><div className="sl">{ex.t==='timed'?'Seconds':'Reps'}</div></div></div>
+    {(pe?.youtubeLink||ex.youtubeLink)&&<a href={pe?.youtubeLink||ex.youtubeLink} target="_blank" rel="noopener" style={{display:'flex',alignItems:'center',gap:6,fontSize:12,color:'var(--red)',textDecoration:'none',padding:'10px 12px',background:'rgba(239,68,68,.06)',borderRadius:12,marginBottom:8}}>▶ Watch YouTube Tutorial</a>}
+    {pe?.notes&&<div className="card"><div className="il">📝 Notes</div><div style={{fontSize:12,lineHeight:1.5}}>{pe.notes}</div></div>}
+    <button className="bp1" onClick={onClose}>CLOSE</button>
+  </div></div>);
+}
+
+function TmrMod({ex,pe,onClose,onDone}){
+  const tt=pe?.time||ex?.tm||60;const ts=pe?.sets||ex?.s||3;
+  const[tl,setTl]=useState(tt);const[cs,setCs]=useState(1);const[run,setRun]=useState(false);const[dn,setDn]=useState(false);const ref=useRef(null);
+  useEffect(()=>{if(run&&tl>0){ref.current=setInterval(()=>setTl(t=>{if(t<=1){clearInterval(ref.current);setRun(false);
+    if(cs<ts){setTimeout(()=>{setCs(s=>s+1);setTl(tt)},500)}else{setDn(true);onDone&&onDone()}return 0}return t-1}),1000)}return()=>clearInterval(ref.current)},[run,cs]);
+  const m=Math.floor(tl/60),s=tl%60;const pct=((tt-tl)/tt)*100;const C=2*Math.PI*70;const off=C-(pct/100)*C;
+  return(<div className="mo" onClick={onClose}><div className="mb" onClick={e=>e.stopPropagation()} style={{textAlign:'center'}}>
+    <div className="mh"/><div style={{fontWeight:700,fontSize:'clamp(14px,3.5vw,16px)',marginBottom:2}}>{ex?.name||'Timer'}</div>
+    <div style={{fontSize:11,color:'var(--txt2)',marginBottom:10}}>Set {cs} of {ts}</div>
+    <svg width="clamp(140px,40vw,160px)" height="clamp(140px,40vw,160px)" viewBox="0 0 160 160" style={{margin:'0 auto',display:'block'}}>
+      <circle cx="80" cy="80" r="70" fill="none" stroke="var(--bg3)" strokeWidth="7"/>
+      <circle cx="80" cy="80" r="70" fill="none" stroke={dn?'var(--green)':'var(--lime)'} strokeWidth="7" strokeLinecap="round" strokeDasharray={C} strokeDashoffset={off} transform="rotate(-90 80 80)" style={{transition:'stroke-dashoffset .5s'}}/></svg>
+    <div className="td" style={{marginTop:'clamp(-100px,-28vw,-108px)',marginBottom:'clamp(44px,12vw,50px)',position:'relative',zIndex:1}}>{dn?'✅':`${m}:${s.toString().padStart(2,'0')}`}</div>
+    {!dn&&<div className="tc"><button className="tb rs" onClick={()=>{setRun(false);setTl(tt)}}>↺</button><button className={`tb ${run?'pa':'pl'}`} onClick={()=>setRun(!run)}>{run?'⏸':'▶'}</button>
+      <button className="tb sk" onClick={()=>{setRun(false);clearInterval(ref.current);if(cs<ts){setCs(s=>s+1);setTl(tt)}else{setDn(true);onDone&&onDone()}}}>⏭</button></div>}
+    {dn&&<div style={{marginBottom:10,color:'var(--green)',fontWeight:700}}>All Sets Complete! 🎉</div>}
+    <button className="bp1" onClick={onClose}>{dn?'DONE':'CLOSE'}</button>
+  </div></div>);
+}
+
+function SessMod({plan,fE,setMod,sT}){
+  const[done,setDone]=useState({});const exs=plan.exercises||[];const dc=Object.keys(done).length;const allDn=dc===exs.length;
+  const tog=id=>setDone(p=>{const n={...p};if(n[id])delete n[id];else n[id]=true;return n});
+  return(<div className="mo" onClick={()=>setMod(null)}><div className="mb" onClick={e=>e.stopPropagation()} style={{maxHeight:'90vh'}}>
+    <div className="mh"/>
+    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:4}}>
+      <div><div style={{fontWeight:700,fontSize:'clamp(13px,3.5vw,15px)'}}>{plan.name}</div><div style={{fontSize:10,color:'var(--txt2)'}}>{dc}/{exs.length} done</div></div>
+      <span className={`badge ${allDn?'bg':'bl'}`}>{allDn?'COMPLETE!':'IN PROGRESS'}</span></div>
+    <div className="wp"><div className="wpf" style={{width:`${exs.length?(dc/exs.length)*100:0}%`}}/></div>
+    <div style={{marginTop:8,maxHeight:'clamp(200px,50vh,400px)',overflowY:'auto'}}>
+      {exs.map(pe=>{const ex=fE(pe.eid);if(!ex)return null;const id=done[pe.eid];return(
+        <div key={pe.eid} className="ei" style={{opacity:id?.6:1,background:id?'rgba(34,197,94,.05)':'var(--bg3)'}}>
+          <div className={`cd ${id?'dn':''}`} onClick={()=>tog(pe.eid)}>{id?'✓':''}</div>
+          <div className="einf"><div className="en" style={{textDecoration:id?'line-through':'none'}}>{ex.name}</div><div className="em">{ex.t==='timed'?`${pe.sets||ex.s}×${pe.time||ex.tm}s`:`${pe.sets||ex.s}×${pe.reps||ex.r} reps`}</div></div>
+          {ex.t==='timed'&&!id&&<button className="ab" style={{background:'rgba(99,102,241,.2)',color:'var(--indigo)'}} onClick={()=>setMod({type:'timer',ex,pe,onDone:()=>{tog(pe.eid);setMod({type:'session',plan})}})}>⏱</button>}
+          {id&&<span style={{color:'var(--green)',fontSize:14}}>✓</span>}</div>)})}</div>
+    {allDn&&<div style={{textAlign:'center',padding:'10px 0'}}><div style={{fontSize:28}}>🎉</div><div style={{fontWeight:700,color:'var(--green)'}}>Workout Complete!</div></div>}
+    <button className="bp1" style={{marginTop:8}} onClick={()=>{setMod(null);if(allDn)sT('Workout finished! 💪')}}>{allDn?'🎉 FINISH':'CLOSE'}</button>
+  </div></div>);
+}
+
+function Trkr({wts,setWts,prof,sT}){
+  const[nw,setNw]=useState('');const log=()=>{const v=parseFloat(nw);if(!v||v<20||v>300){sT('Enter valid weight');return}setWts([...wts,{value:v,date:new Date().toISOString()}]);setNw('');sT('Logged!')};
+  const del=i=>{if(confirm('Delete?')){setWts(wts.filter((_,idx)=>idx!==i));sT('Deleted')}};
+  const last=wts.length>0?wts[wts.length-1].value:prof.weight;const first=wts.length>0?wts[0].value:prof.weight;const diff=(last-first).toFixed(1);
+  return(<div><div className="pt">WEIGHT TRACKER</div><div className="ps">Track progress</div>
+    <div className="stats"><div className="stat"><div className="sv">{last}</div><div className="sl">Current (kg)</div></div><div className="stat"><div className="sv" style={{color:diff<=0?'var(--green)':'var(--red)'}}>{diff>0?'+':''}{diff}</div><div className="sl">Change (kg)</div></div></div>
+    <div className="card"><div className="ch"><div className="ct">Progress</div>{wts.length>1&&<span className={`badge ${diff<=0?'bg':'br'}`}>{diff<=0?'↓ LOSING':'↑ GAINING'}</span>}</div>{wts.length>1?<MC data={wts.slice(-15)}/>:<div style={{textAlign:'center',padding:'10px 0',fontSize:11,color:'var(--txt2)'}}>Log 2+ weights for chart</div>}</div>
+    <div className="card"><div className="il">Log Weight</div><div className="fr"><input className="inp f1" placeholder="e.g. 78.2" type="number" step="0.1" value={nw} onChange={e=>setNw(e.target.value)} onKeyDown={e=>e.key==='Enter'&&log()}/><button className="bp1" style={{width:'auto',padding:'10px 16px'}} onClick={log}>LOG</button></div></div>
+    {wts.length>0&&<div className="card"><div className="ct" style={{marginBottom:6}}>History ({wts.length})</div>
+      {[...wts].reverse().slice(0,20).map((w,i)=><div key={i} className="ei"><div className="einf"><div className="en">{w.value} kg</div><div className="em">{new Date(w.date).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div></div><button className="ab adl" onClick={()=>del(wts.length-1-i)}>✕</button></div>)}
+      {wts.length>20&&<div style={{fontSize:10,color:'var(--txt2)',textAlign:'center'}}>Showing 20 of {wts.length}</div>}</div>}
+  </div>);
+}
+
+function BmiPg({prof,setProf,bmi,bc,bco,bp2,sT}){
+  const[h,setH]=useState(prof.height.toString());const[w,setW]=useState(prof.weight.toString());const[a,setA]=useState(prof.age.toString());
+  const calc=()=>{const hv=parseFloat(h),wv=parseFloat(w),av=parseInt(a);if(!hv||!wv||hv<50||hv>250||wv<20||wv>300){sT('Enter valid values');return}setProf({...prof,height:hv,weight:wv,age:av||25});sT('Calculated!')};
+  return(<div><div className="pt">BMI CALCULATOR</div><div className="ps">Body Mass Index</div>
+    <div className="card" style={{textAlign:'center',padding:'clamp(16px,4vw,20px)'}}>
+      <div style={{fontFamily:'Bebas Neue',fontSize:'clamp(44px,12vw,52px)',color:bco,lineHeight:1}}>{bmi}</div>
+      <div style={{fontSize:13,fontWeight:700,color:bco,marginTop:4}}>{bc}</div>
+      <div className="bbar"><div className="bmk" style={{left:`${bp2}%`}}/></div>
+      <div style={{display:'flex',justifyContent:'space-between',fontSize:8,color:'var(--txt2)',marginTop:6}}><span>Under</span><span>Normal</span><span>Over</span><span>Obese</span></div></div>
+    <div className="ig"><div className="il">Height (cm)</div><input className="inp" type="number" value={h} onChange={e=>setH(e.target.value)}/></div>
+    <div className="ig"><div className="il">Weight (kg)</div><input className="inp" type="number" value={w} onChange={e=>setW(e.target.value)}/></div>
+    <div className="ig"><div className="il">Age</div><input className="inp" type="number" value={a} onChange={e=>setA(e.target.value)}/></div>
+    <button className="bp1" onClick={calc}>CALCULATE BMI</button>
+    <div className="card" style={{marginTop:8}}><div className="ct" style={{marginBottom:4}}>BMI Categories</div>
+      {[{l:'Underweight',r:'< 18.5',c:'var(--blue)'},{l:'Normal',r:'18.5 - 24.9',c:'var(--green)'},{l:'Overweight',r:'25 - 29.9',c:'var(--orange)'},{l:'Obese',r:'≥ 30',c:'var(--red)'}].map((x,i)=>
+        <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'5px 0',borderBottom:i<3?'1px solid var(--bg3)':'none'}}><span style={{fontSize:12,color:x.c,fontWeight:600}}>{x.l}</span><span style={{fontSize:12,color:'var(--txt2)'}}>{x.r}</span></div>)}</div>
+  </div>);
+}
+
+function Prof({prof,setProf,plans,wts,cex,sT}){
+  const[ed,setEd]=useState(false);const[nm,setNm]=useState(prof.name);const[,rf]=useState(0);useEffect(()=>window.ffCloud.subscribe(()=>rf(x=>x+1)),[]);const cl=window.ffCloud.state;
+  const svN=()=>{setProf({...prof,name:nm.trim()||'User'});setEd(false);sT('Updated')};
+  const exp=()=>{const d=JSON.stringify({profile:prof,plans:ld('plans',[]),wts:ld('wts',[]),cex:ld('cex',[])},null,2);const b=new Blob([d],{type:'application/json'});const u=URL.createObjectURL(b);
+    const a=document.createElement('a');a.href=u;a.download='fitforge-backup.json';a.click();URL.revokeObjectURL(u);sT('Exported!')};
+  const imp=()=>{const i=document.createElement('input');i.type='file';i.accept='.json';
+    i.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(d.profile){setProf(d.profile);sv('prof',d.profile)}if(d.plans)sv('plans',d.plans);if(d.wts)sv('wts',d.wts);if(d.cex)sv('cex',d.cex);sT('Imported!');setTimeout(()=>window.location.reload(),500)}catch{sT('Invalid file')}};r.readAsText(f)};i.click()};
+  return(<div>
+    <div style={{textAlign:'center',marginBottom:14}}>
+      <div style={{width:'clamp(56px,15vw,64px)',height:'clamp(56px,15vw,64px)',borderRadius:'50%',background:'linear-gradient(135deg,var(--lime),var(--indigo))',margin:'0 auto 8px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'clamp(22px,6vw,26px)',fontFamily:'Bebas Neue',color:'var(--bg)'}}>{prof.name[0]?.toUpperCase()||'U'}</div>
+      {ed?<div className="fr" style={{justifyContent:'center',maxWidth:180,margin:'0 auto'}}><input className="inp" value={nm} onChange={e=>setNm(e.target.value)} autoFocus style={{textAlign:'center',fontSize:13}}/><button className="bsm" style={{background:'var(--lime)',color:'var(--bg)'}} onClick={svN}>✓</button></div>
+      :<div><div style={{fontWeight:700,fontSize:'clamp(14px,3.5vw,16px)',cursor:'pointer'}} onClick={()=>setEd(true)}>{prof.name} ✏️</div><div style={{fontSize:11,color:'var(--txt2)'}}>Tap to edit</div></div>}</div>
+    <div className="stats"><div className="stat"><div className="sv">{plans.length}</div><div className="sl">Plans</div></div><div className="stat"><div className="sv">{cex.length}</div><div className="sl">Custom Ex</div></div></div>
+    <div className="stats"><div className="stat"><div className="sv">{wts.length}</div><div className="sl">Weight Logs</div></div><div className="stat"><div className="sv">♾️</div><div className="sl">Limits</div></div></div>
+    <div className="card"><div className="ct" style={{marginBottom:6}}>☁️ Account & AI</div>
+      {cl.phase==='off'?<div className="em">Cloud login is not set up yet (config.js still has the placeholder text). The app works fully on this phone.</div>
+      :cl.phase==='loading'?<div className="em">Loading login…</div>
+      :cl.phase==='error'?<div className="em">{cl.msg}</div>
+      :cl.phase==='out'?<div>
+        <div className="em" style={{marginBottom:8}}>Sign in to back up your data, use it on other devices, and let AI help you. Your data stays private to your own account. Google sign-in is available.</div>
+        <button className="bsm" style={{background:'var(--lime)',color:'var(--bg)',width:'100%',padding:'10px'}} onClick={()=>window.ffCloud.signIn()}>Sign in / Sign up</button>
+      </div>
+      :<div>
+        <div className="ei"><div className="einf"><div className="en">👤 {cl.email||'Signed in'}</div><div className="em">Your data is private to this account</div></div></div>
+        <div className="ei" onClick={()=>{sT('Syncing...');window.ffCloud.pull(true).then(r=>sT(r))}}><div className="einf"><div className="en">🔄 Sync now</div><div className="em">{cl.last?'Last synced '+new Date(cl.last).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'Back up and refresh your data'}</div></div><span style={{color:'var(--txt2)'}}>→</span></div>
+        <div className="ei" onClick={()=>{if(cl.ai===null)return;if(cl.ai){window.ffCloud.setAi(false).then(r=>sT(r))}else if(confirm('Allow AI apps you connect (Claude, ChatGPT) to read and edit YOUR FitForge data? You can turn this off any time.')){window.ffCloud.setAi(true).then(r=>sT(r))}}}><div className="einf"><div className="en">🤖 AI access</div><div className="em">{cl.ai===null?'Checking…':cl.ai?'ON — connected AI apps can read and edit your data':'OFF — no AI can touch your data'}</div></div><span className={cl.ai?'badge bi':'badge'}>{cl.ai?'ON':'OFF'}</span></div>
+        {cl.ai?<div className="ei" onClick={()=>window.ffCloud.copyMcp().then(r=>r&&sT(r))}><div className="einf"><div className="en">📋 Copy AI link</div><div className="em">Paste it in Claude / ChatGPT → Add custom connector</div></div><span style={{color:'var(--txt2)'}}>→</span></div>:null}
+        <div className="ei" onClick={()=>{if(confirm('Sign out? Your data stays on this phone.')){window.ffCloud.signOut()}}}><div className="einf"><div className="en" style={{color:'var(--red)'}}>Sign out</div><div className="em">Data stays on this phone</div></div></div>
+      </div>}
+      {cl.phase!=='off'?<div className="ei" onClick={()=>window.ffCloud.checkServer().then(t=>alert(t))}><div className="einf"><div className="en">🩺 Check server</div><div className="em">Shows if your cloud server is set up correctly</div></div><span style={{color:'var(--txt2)'}}>→</span></div>:null}
+    </div>
+    <div className="card"><div className="ct" style={{marginBottom:6}}>Data & Settings</div>
+      <div className="ei" onClick={exp}><div className="einf"><div className="en">💾 Export Backup</div><div className="em">Download all your data</div></div><span style={{color:'var(--txt2)'}}>→</span></div>
+      <div className="ei" onClick={imp}><div className="einf"><div className="en">📂 Import Backup</div><div className="em">Restore from file</div></div><span style={{color:'var(--txt2)'}}>→</span></div>
+      <div className="ei" onClick={()=>{if(confirm('DELETE ALL DATA?')){const go=()=>{localStorage.clear();window.location.reload()};window.ffCloud.wipeCloud().then(go,go)}}}><div className="einf"><div className="en" style={{color:'var(--red)'}}>🗑️ Clear All Data</div><div className="em">Start fresh</div></div></div></div>
+    <div className="tag">🛡️ Data stored on this device (and your private cloud when signed in)</div>
+    <div style={{textAlign:'center',marginTop:10,fontSize:10,color:'var(--txt2)'}}>FitForge v1.0 • Made with ❤️</div>
+  </div>);
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+<script data-cochat-helper="true">
+// Dark mode sync from parent
+window.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'darkMode') {
+        document.documentElement.classList.toggle('dark', e.data.dark);
+    }
+});
+
+// CoChat AI helper — lets artifact JS call the LLM
+// Usage: const response = await cochat.ask("What is 2+2?", {model: "", system: ""});
+(function() {
+    // Fallback: fetch first available model if no model ID was injected
+    var _fallbackModel = null;
+    async function _getFallbackModel() {
+        if (_fallbackModel) return _fallbackModel;
+        try {
+            var t = localStorage.getItem('token');
+            var h = t ? {'Authorization': 'Bearer ' + t} : {};
+            var resp = await fetch('/api/models', {headers: h});
+            if (resp.ok) {
+                var data = await resp.json();
+                var models = data.data || data;
+                if (models && models.length > 0) _fallbackModel = models[0].id;
+            }
+        } catch(e) {}
+        return _fallbackModel || '';
+    }
+
+    window.cochat = {
+        ask: async function(prompt, options) {
+            options = options || {};
+            var model = window._cochatModel || await _getFallbackModel();
+            var token = localStorage.getItem('token');
+            var systemPrompt = options.system || '';
+            var messages = [];
+            if (systemPrompt) {
+                messages.push({ role: 'system', content: systemPrompt });
+            }
+            messages.push({ role: 'user', content: prompt });
+
+            var hdrs = { 'Content-Type': 'application/json' };
+            if (token) hdrs['Authorization'] = 'Bearer ' + token;
+
+            var resp = await fetch('/api/chat/completions', {
+                method: 'POST',
+                headers: hdrs,
+                body: JSON.stringify({
+                    model: model,
+                    messages: messages,
+                    stream: false
+                })
+            });
+            if (!resp.ok) {
+                var err = await resp.text();
+                throw new Error('LLM request failed (' + resp.status + '): ' + err);
+            }
+            var data = await resp.json();
+            if (data.choices && data.choices[0] && data.choices[0].message) {
+                return data.choices[0].message.content;
+            }
+            return JSON.stringify(data);
+        }
+    };
+})();
+</script>
+<script data-cochat-model="true">window._cochatModel="openrouter_manifold.anthropic/claude-opus-4.6";</script>
+</body>
+</html>
