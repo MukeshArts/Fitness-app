@@ -1,0 +1,13 @@
+{
+  "name": "fitforge-cloud",
+  "main": "worker.js",
+  "compatibility_date": "2025-09-01",
+  "workers_dev": true,
+  "kv_namespaces": [
+    { "binding": "FF", "id": "d2ec43c50226442197595ea186c8c2c4" }
+  ],
+  "vars": {
+    "CLERK_PUBLISHABLE_KEY": "pk_test_ZnVua3ktZG9yeS0xODk1LmNsZXJrLmFjY291bnRzLmRldiQ"
+  },
+  "observability": { "enabled": true }
+}
