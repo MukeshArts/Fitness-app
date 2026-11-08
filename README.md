@@ -14,7 +14,7 @@ Phone app (Netlify)  --login token-->  Cloudflare Worker + KV  <--OAuth-->  Clau
 
 | Piece | What it does | Free-plan limits to know |
 | --- | --- | --- |
-| Netlify | Hosts the app files | 300 credits/month; a production deploy costs 15 (about 20 deploys/month) |
+| Netlify | Hosts the app files | 300 credits/month; a production deploy  costs 15 (about 20 deploys/month) |
 | Clerk (development instance) | Login (email / Google), unique user ids, AI permission screen | 500 users cap, "Development mode" label, not meant for production workloads |
 | Cloudflare Worker | Stores each user's data under their own id, verifies login, is the MCP server | 100,000 requests/day |
 | Cloudflare KV | Storage used by the Worker | 1,000 writes/day, 100,000 reads/day, changes can take ~60 s to spread |
